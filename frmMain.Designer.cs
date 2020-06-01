@@ -28,7 +28,19 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.btnRun = new System.Windows.Forms.Button();
             this.SuspendLayout();
+            // 
+            // btnRun
+            // 
+            this.btnRun.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnRun.Location = new System.Drawing.Point(12, 12);
+            this.btnRun.Name = "btnRun";
+            this.btnRun.Size = new System.Drawing.Size(75, 23);
+            this.btnRun.TabIndex = 0;
+            this.btnRun.Text = "Run";
+            this.btnRun.UseVisualStyleBackColor = true;
+            this.btnRun.Click += new System.EventHandler(this.btnRun_Click);
             // 
             // FrmMain
             // 
@@ -36,6 +48,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(228, 44);
+            this.Controls.Add(this.btnRun);
             this.Name = "FrmMain";
             this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -47,6 +60,8 @@
         }
 
         #endregion
+
+        private System.Windows.Forms.Button btnRun;
     }
 }
 
