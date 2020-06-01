@@ -24,7 +24,12 @@ namespace AStarPathfinding
             set
             {
                 isEngineRunning = value;
-                Invoke(new Action(() => btnRun.Enabled = !isEngineRunning));
+                Invoke(new Action(() =>
+                {
+                    btnRun.Enabled = !isEngineRunning;
+                    btnRandom.Enabled = !isEngineRunning;
+                    btnClear.Enabled = !isEngineRunning;
+                }));
             }
         }
 
@@ -219,6 +224,52 @@ namespace AStarPathfinding
 
         public void RefreshUi()
         {
+            RefreshCanvas();
+        }
+
+        private void btnRandom_Click(object sender, EventArgs e)
+        {
+            Random r = new Random();
+            var start = new Point(r.Next(0, Engine.Map.GetLength(0)), r.Next(0, Engine.Map.GetLength(1)));
+            var target = new Point(r.Next(0, Engine.Map.GetLength(0)), r.Next(0, Engine.Map.GetLength(1)));
+            for (int x = 0; x < Engine.Map.GetLength(0); x++)
+            {
+                for (int y = 0; y < Engine.Map.GetLength(1); y++)
+                {
+                    if (x == start.X && y == start.Y)
+                    {
+                        Engine.Map[x, y] = "A";
+                    }
+                    else if (x == target.X && y == target.Y)
+                    {
+                        Engine.Map[x, y] = "B";
+                    }
+                    else
+                    {
+                        int type = r.Next(0, 3);
+                        if (type == 0)
+                        {
+                            Engine.Map[x, y] = "X";
+                        }
+                        else
+                        {
+                            Engine.Map[x, y] = null;
+                        }
+                    }
+                }
+            }
+            RefreshCanvas();
+        }
+
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            for (int x = 0; x < Engine.Map.GetLength(0); x++)
+            {
+                for (int y = 0; y < Engine.Map.GetLength(1); y++)
+                {
+                    Engine.Map[x, y] = null;
+                }
+            }
             RefreshCanvas();
         }
     }
