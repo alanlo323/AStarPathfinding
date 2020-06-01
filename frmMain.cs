@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using AStarPathfinding.Model;
 
@@ -14,7 +13,9 @@ namespace AStarPathfinding
         Size CanvasSize { get; set; }
         DrawPanel DrawPanel { get; set; }
         List<Line> GridLine { get; } = new List<Line>();
+        Engine Engine { get; set; }
 
+        Graphics canvas;
         bool isSettingBlock = false;
         Color blockColor = Color.Black;
         int? triggerButton;
@@ -26,10 +27,7 @@ namespace AStarPathfinding
             Size = new Size(CanvasSize.Width, CanvasSize.Height);
             //MaximumSize = new Size(Size.Width + 20, Size.Height + 20);
             MinimumSize = Size;
-        }
 
-        private void FrmMain_Load(object sender, EventArgs e)
-        {
             DrawPanel = new DrawPanel()
             {
                 Size = CanvasSize
@@ -39,7 +37,14 @@ namespace AStarPathfinding
             DrawPanel.MouseUp += new MouseEventHandler(OnMouseUp);
             DrawPanel.MouseMove += new MouseEventHandler(OnMouseMove);
             Controls.Add(DrawPanel);
+            canvas = DrawPanel.CreateGraphics();
+        }
 
+        private void FrmMain_Load(object sender, EventArgs e)
+        {
+            Engine = new Engine(new Size(ButtonCountX, ButtonCountY));
+
+            //  Draw base line
             for (int x = 0; x <= ButtonCountX; x++)
             {
                 GridLine.Add(new Line(Color.Black, 1f,
@@ -84,7 +89,15 @@ namespace AStarPathfinding
             triggerButton = (int)e.Button;
 
             TransferMouseLocationToIndex(e.X, e.Y, out int x, out int y);
-            DrawBlock(blockColor, x, y);
+            if (blockColor == Color.White)
+            {
+                Engine.Map[x, y] = null;
+            }
+            else
+            {
+                Engine.Map[x, y] = blockColor.Name;
+            }
+            RefreshCanvas();
         }
 
         private void OnMouseUp(object sender, MouseEventArgs e)
@@ -99,15 +112,21 @@ namespace AStarPathfinding
         private void OnMouseMove(object sender, MouseEventArgs e)
         {
             TransferMouseLocationToIndex(e.X, e.Y, out int x, out int y);
+            if (blockColor == Color.White)
+            {
+                Engine.Map[x, y] = null;
+            }
+            else
+            {
+                Engine.Map[x, y] = blockColor.Name;
+            }
             if (isSettingBlock)
-                DrawBlock(blockColor, x, y);
+                RefreshCanvas();
         }
 
         private void OnCanvasPaint(object sender, PaintEventArgs e)
         {
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            foreach (Line L in GridLine)
-                L.Draw(e.Graphics);
+            //RefreshCanvas();
         }
 
         private void TransferMouseLocationToIndex(int mouseX, int mouseY, out int x, out int y)
@@ -116,11 +135,37 @@ namespace AStarPathfinding
             y = mouseY / (CanvasSize.Height / ButtonCountY);
         }
 
-        private void DrawBlock(Color color, int x, int y)
+        private void RefreshCanvas()
         {
             DrawPanel.Invalidate();
 
-            var canvas = DrawPanel.CreateGraphics();
+            foreach (Line line in GridLine)
+                line.Draw(canvas);
+
+            for (int x = 0; x < Engine.Map.GetLength(0); x++)
+            {
+                for (int y = 0; y < Engine.Map.GetLength(1); y++)
+                {
+                    if (Engine.Map[x, y] != null)
+                    {
+                        Color brushColor = new Color();
+                        if (Engine.Map[x, y] == Color.Gray.Name)
+                        {
+                            brushColor = Color.Gray;
+                        }
+                        if (Engine.Map[x, y] == Color.White.Name)
+                        {
+                            brushColor = Color.White;
+                        }
+                        DrawBlock(brushColor, x, y);
+                        Console.WriteLine($@"{x}:{y}");
+                    }
+                }
+            }
+        }
+
+        private void DrawBlock(Color color, int x, int y)
+        {
             var point = new Point(x * (CanvasSize.Width / ButtonCountX), y * (CanvasSize.Height / ButtonCountY));
             var size = new Size(CanvasSize.Width / ButtonCountX, CanvasSize.Height / ButtonCountY);
             canvas.FillRectangle(new SolidBrush(color), new Rectangle(point, size));
