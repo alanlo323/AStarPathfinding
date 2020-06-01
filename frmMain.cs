@@ -14,7 +14,10 @@ namespace AStarPathfinding
         Size CanvasSize { get; set; }
         DrawPanel DrawPanel { get; set; }
         List<Line> GridLine { get; } = new List<Line>();
+
         bool isSettingBlock = false;
+        Color blockColor = Color.Black;
+        int? triggerButton;
 
         public FrmMain()
         {
@@ -53,22 +56,51 @@ namespace AStarPathfinding
 
         private void OnMouseDown(object sender, MouseEventArgs e)
         {
+            if (triggerButton != null)
+                return;
+
             isSettingBlock = true;
 
+            switch (e.Button)
+            {
+                case MouseButtons.Left:
+                    blockColor = Color.Gray;
+                    break;
+                case MouseButtons.None:
+                    break;
+                case MouseButtons.Right:
+                    blockColor = Color.White;
+                    break;
+                case MouseButtons.Middle:
+                    break;
+                case MouseButtons.XButton1:
+                    break;
+                case MouseButtons.XButton2:
+                    break;
+                default:
+                    return;
+            }
+
+            triggerButton = (int)e.Button;
+
             TransferMouseLocationToIndex(e.X, e.Y, out int x, out int y);
-            DrawBlock(Color.Gray, x, y);
+            DrawBlock(blockColor, x, y);
         }
 
         private void OnMouseUp(object sender, MouseEventArgs e)
         {
-            isSettingBlock = false;
+            if ((int)e.Button == triggerButton)
+            {
+                isSettingBlock = false;
+                triggerButton = null;
+            }
         }
 
         private void OnMouseMove(object sender, MouseEventArgs e)
         {
             TransferMouseLocationToIndex(e.X, e.Y, out int x, out int y);
             if (isSettingBlock)
-                DrawBlock(Color.Gray, x, y);
+                DrawBlock(blockColor, x, y);
         }
 
         private void OnCanvasPaint(object sender, PaintEventArgs e)
@@ -86,6 +118,8 @@ namespace AStarPathfinding
 
         private void DrawBlock(Color color, int x, int y)
         {
+            DrawPanel.Invalidate();
+
             var canvas = DrawPanel.CreateGraphics();
             var point = new Point(x * (CanvasSize.Width / ButtonCountX), y * (CanvasSize.Height / ButtonCountY));
             var size = new Size(CanvasSize.Width / ButtonCountX, CanvasSize.Height / ButtonCountY);
