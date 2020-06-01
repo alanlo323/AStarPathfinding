@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using AStarPathfinding.Model;
 
@@ -17,7 +18,7 @@ namespace AStarPathfinding
 
         Graphics canvas;
         bool isSettingBlock = false;
-        Color blockColor = Color.Black;
+        string actionType = string.Empty;
         int? triggerButton;
 
         public FrmMain()
@@ -57,6 +58,7 @@ namespace AStarPathfinding
                     new Point(0, Math.Min(CanvasSize.Height - 1, y * (CanvasSize.Height / ButtonCountY))),
                     new Point(CanvasSize.Width, Math.Min(CanvasSize.Height - 1, y * (CanvasSize.Height / ButtonCountY)))));
             }
+
         }
 
         private void OnMouseDown(object sender, MouseEventArgs e)
@@ -64,39 +66,26 @@ namespace AStarPathfinding
             if (triggerButton != null)
                 return;
 
-            isSettingBlock = true;
 
             switch (e.Button)
             {
                 case MouseButtons.Left:
-                    blockColor = Color.Gray;
-                    break;
-                case MouseButtons.None:
+                    actionType = "X";
                     break;
                 case MouseButtons.Right:
-                    blockColor = Color.White;
-                    break;
-                case MouseButtons.Middle:
-                    break;
-                case MouseButtons.XButton1:
-                    break;
-                case MouseButtons.XButton2:
+                    actionType = string.Empty;
                     break;
                 default:
                     return;
             }
 
+            isSettingBlock = true;
+
             triggerButton = (int)e.Button;
 
             TransferMouseLocationToIndex(e.X, e.Y, out int x, out int y);
-            if (blockColor == Color.White)
-            {
-                Engine.Map[x, y] = null;
-            }
-            else
-            {
-                Engine.Map[x, y] = blockColor.Name;
-            }
+            Engine.Map[x, y] = actionType;
+
             RefreshCanvas();
         }
 
@@ -111,22 +100,18 @@ namespace AStarPathfinding
 
         private void OnMouseMove(object sender, MouseEventArgs e)
         {
+            if (!isSettingBlock)
+                return;
+
             TransferMouseLocationToIndex(e.X, e.Y, out int x, out int y);
-            if (blockColor == Color.White)
-            {
-                Engine.Map[x, y] = null;
-            }
-            else
-            {
-                Engine.Map[x, y] = blockColor.Name;
-            }
-            if (isSettingBlock)
-                RefreshCanvas();
+            Engine.Map[x, y] = actionType;
+
+            RefreshCanvas();
         }
 
         private void OnCanvasPaint(object sender, PaintEventArgs e)
         {
-            //RefreshCanvas();
+            RefreshCanvas();
         }
 
         private void TransferMouseLocationToIndex(int mouseX, int mouseY, out int x, out int y)
@@ -137,8 +122,6 @@ namespace AStarPathfinding
 
         private void RefreshCanvas()
         {
-            DrawPanel.Invalidate();
-
             foreach (Line line in GridLine)
                 line.Draw(canvas);
 
@@ -148,27 +131,39 @@ namespace AStarPathfinding
                 {
                     if (Engine.Map[x, y] != null)
                     {
-                        Color brushColor = new Color();
-                        if (Engine.Map[x, y] == Color.Gray.Name)
+                        Color color = new Color();
+                        if (Engine.Map[x, y] == "X")
                         {
-                            brushColor = Color.Gray;
+                            color = Color.Gray;
                         }
-                        if (Engine.Map[x, y] == Color.White.Name)
+                        if (Engine.Map[x, y] == string.Empty)
                         {
-                            brushColor = Color.White;
+                            color = BackColor;
                         }
-                        DrawBlock(brushColor, x, y);
-                        Console.WriteLine($@"{x}:{y}");
+                        DrawBlock(color, x, y, isFill: false);
                     }
                 }
             }
         }
 
-        private void DrawBlock(Color color, int x, int y)
+        private void DrawBlock(Color color, int x, int y, bool isFill = true)
         {
             var point = new Point(x * (CanvasSize.Width / ButtonCountX), y * (CanvasSize.Height / ButtonCountY));
             var size = new Size(CanvasSize.Width / ButtonCountX, CanvasSize.Height / ButtonCountY);
-            canvas.FillRectangle(new SolidBrush(color), new Rectangle(point, size));
+            if (isFill)
+            {
+                canvas.FillRectangle(new SolidBrush(color), new Rectangle(point, size));
+            }
+            else
+            {
+                canvas.FillRectangle(new SolidBrush(color), new Rectangle(point, size));
+                canvas.DrawRectangle(new Pen(Color.Black), new Rectangle(point, size));
+            }
+        }
+
+        private void FrmMain_Shown(object sender, EventArgs e)
+        {
+            RefreshCanvas();
         }
     }
 }
