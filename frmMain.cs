@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using AStarPathfinding.Model;
@@ -11,8 +12,8 @@ namespace AStarPathfinding
 {
     public partial class FrmMain : Form, IStatesChangeRecall
     {
-        int BoardWidth { get; set; } = 100;
-        int BoardHeight { get; set; } = 100;
+        int BoardWidth { get; set; } = 50;
+        int BoardHeight { get; set; } = 50;
         Size CanvasSize { get; set; }
         DrawPanel DrawPanel { get; set; }
         List<Line> GridLine { get; } = new List<Line>();
@@ -155,14 +156,15 @@ namespace AStarPathfinding
                     for (int y = 0; y < Engine.Map.GetLength(1); y++)
                     {
                         Engine.Map[x, y].Status = LocationStatus.NULL;
-                        if (x % 2 == 1 && y % 2 == 1)
-                        {
-                            Engine.Map[x, y].Type = LocationType.WALL;
-                        }
-                        else
-                        {
-                            Engine.Map[x, y].Type = LocationType.SPACE;
-                        }
+                        //if (x % 2 == 1 && y % 2 == 1)
+                        //{
+                        //    Engine.Map[x, y].Type = LocationType.WALL;
+                        //}
+                        //else
+                        //{
+                        //    Engine.Map[x, y].Type = LocationType.SPACE;
+                        //}
+                        Engine.Map[x, y].Type = LocationType.WALL;
                     }
                 }
                 //  Transfer maze to block base map
@@ -170,23 +172,59 @@ namespace AStarPathfinding
                 {
                     for (int x = 0; x < Maze.Board.GetLength(1); x++)
                     {
+                        int spaceCount = 0;
+                        if ((x * 2 + 1) >= 0)
+                        {
+                            if (Maze.Board[y, x].EastWall)
+                            {
+                                Engine.Map[x * 2 + 1, y * 2].Type = LocationType.WALL;
+                            }
+                            else
+                            {
+                                Engine.Map[x * 2 + 1, y * 2].Type = LocationType.SPACE;
+                                spaceCount++;
+                            }
+                        }
+                        if ((y * 2 + 1) >= 0)
+                        {
+                            if (Maze.Board[y, x].SouthWall)
+                            {
+                                Engine.Map[x * 2, y * 2 + 1].Type = LocationType.WALL;
+                            }
+                            else
+                            {
+                                Engine.Map[x * 2, y * 2 + 1].Type = LocationType.SPACE;
+                                spaceCount++;
+                            }
+                        }
+                        if ((x * 2 - 1) >= 0)
+                        {
+                            if (Maze.Board[y, x].WestWall)
+                            {
+                                Engine.Map[x * 2 - 1, y * 2].Type = LocationType.WALL;
+                            }
+                            else
+                            {
+                                Engine.Map[x * 2 - 1, y * 2].Type = LocationType.SPACE;
+                                spaceCount++;
+                            }
+                        }
+                        if ((y * 2 - 1) >= 0)
+                        {
+                            if (Maze.Board[y, x].NorthWall)
+                            {
+                                Engine.Map[x * 2, y * 2 - 1].Type = LocationType.WALL;
+                            }
+                            else
+                            {
+                                Engine.Map[x * 2, y * 2 - 1].Type = LocationType.SPACE;
+                                spaceCount++;
+                            }
+                        }
+                        //if (spaceCount >= 1)
+                        //{
                         Engine.Map[y * 2, x * 2].Type = LocationType.SPACE;
-                        if (Maze.Board[y, x].EastWall && ((x * 2 + 1) >= 0))
-                        {
-                            Engine.Map[x * 2 + 1, y * 2].Type = LocationType.WALL;
-                        }
-                        if (Maze.Board[y, x].SouthWall && ((y * 2 + 1) >= 0))
-                        {
-                            Engine.Map[x * 2, y * 2 + 1].Type = LocationType.WALL;
-                        }
-                        if (Maze.Board[y, x].WestWall && ((x * 2 - 1) >= 0))
-                        {
-                            Engine.Map[x * 2 - 1, y * 2].Type = LocationType.WALL;
-                        }
-                        if (Maze.Board[y, x].NorthWall && ((y * 2 - 1) >= 0))
-                        {
-                            Engine.Map[x * 2, y * 2 - 1].Type = LocationType.WALL;
-                        }
+                        //}
                     }
                 }
                 var start = Maze.Start;
