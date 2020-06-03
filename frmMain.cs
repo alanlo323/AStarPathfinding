@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using AStarPathfinding.Model;
 using static AStarPathfinding.Engine;
+using static AStarPathfinding.Location;
 
 namespace AStarPathfinding
 {
@@ -35,14 +35,14 @@ namespace AStarPathfinding
 
         Graphics canvas;
         bool isSettingBlock = false;
-        string actionType = string.Empty;
+        LocationType actionType = LocationType.SPACE;
         int? triggerButton;
         private bool isEngineRunning = false;
 
         public FrmMain()
         {
             InitializeComponent();
-            CanvasSize = new Size(600, 600);
+            CanvasSize = new Size(500, 500);
             Size = new Size(CanvasSize.Width, CanvasSize.Height + 75);
             //MaximumSize = new Size(Size.Width + 20, Size.Height + 20);
             MinimumSize = Size;
@@ -91,22 +91,22 @@ namespace AStarPathfinding
             switch (e.Button)
             {
                 case MouseButtons.Middle:
-                    if (Engine.Map[x, y] == "A")
+                    if (Engine.Map[x, y].Type == LocationType.START_POINT)
                     {
-                        actionType = "B";
+                        actionType = LocationType.END_POINT;
                     }
                     else
                     {
-                        actionType = "A";
+                        actionType = LocationType.START_POINT;
                     }
                     break;
                 case MouseButtons.Left:
-                    actionType = "X";
+                    actionType = LocationType.WALL;
                     isSettingBlock = true;
                     triggerButton = (int)e.Button;
                     break;
                 case MouseButtons.Right:
-                    actionType = null;
+                    actionType = LocationType.SPACE;
                     isSettingBlock = true;
                     triggerButton = (int)e.Button;
                     break;
@@ -114,7 +114,7 @@ namespace AStarPathfinding
                     return;
             }
 
-            Engine.Map[x, y] = actionType;
+            Engine.Map[x, y].Type = actionType;
 
             RefreshCanvas();
         }
@@ -138,7 +138,7 @@ namespace AStarPathfinding
                 return;
 
             TransferMouseLocationToIndex(e.X, e.Y, out int x, out int y);
-            Engine.Map[x, y] = actionType;
+            Engine.Map[x, y].Type = actionType;
 
             RefreshCanvas();
         }
@@ -154,28 +154,34 @@ namespace AStarPathfinding
             {
                 for (int y = 0; y < Engine.Map.GetLength(1); y++)
                 {
-                    switch (Engine.Map[x, y])
+                    switch (Engine.Map[x, y].Type)
                     {
-                        case "A":
-                            DrawBlock(x, y, color: Color.Blue);
+                        case LocationType.SPACE:
+                            switch (Engine.Map[x, y].Status)
+                            {
+                                case LocationStatus.NULL:
+                                    DrawBlock(x, y, isFill: false);
+                                    break;
+                                case LocationStatus.SEARCHED:
+                                    DrawBlock(x, y, color: Color.LightGray);
+                                    break;
+                                case LocationStatus.PATH:
+                                    DrawBlock(x, y, color: Color.Green);
+                                    break;
+                                default:
+                                    break;
+                            }
                             break;
-                        case "B":
-                            DrawBlock(x, y, color: Color.Red);
-                            break;
-                        case "X":
+                        case LocationType.WALL:
                             DrawBlock(x, y, color: Color.Gray);
                             break;
-                        case "*":
-                            DrawBlock(x, y, color: Color.LightGray);
+                        case LocationType.START_POINT:
+                            DrawBlock(x, y, color: Color.Blue);
                             break;
-                        case "_":
-                            DrawBlock(x, y, color: Color.Green);
-                            break;
-                        case null:
-                            DrawBlock(x, y, isFill: false);
+                        case LocationType.END_POINT:
+                            DrawBlock(x, y, color: Color.Red);
                             break;
                         default:
-                            DrawBlock(x, y, color: Color.Pink);
                             break;
                     }
                 }
@@ -207,12 +213,17 @@ namespace AStarPathfinding
             }
         }
 
+        public void OnStatusUpdated()
+        {
+            RefreshCanvas();
+        }
+
         private void FrmMain_Shown(object sender, EventArgs e)
         {
             RefreshCanvas();
         }
 
-        private void btnRun_Click(object sender, EventArgs e)
+        private void BtnRun_Click(object sender, EventArgs e)
         {
             new Thread(() =>
             {
@@ -222,12 +233,7 @@ namespace AStarPathfinding
             RefreshCanvas();
         }
 
-        public void RefreshUi()
-        {
-            RefreshCanvas();
-        }
-
-        private void btnRandom_Click(object sender, EventArgs e)
+        private void BtnRandom_Click(object sender, EventArgs e)
         {
             Random r = new Random();
             var start = new Point(r.Next(0, Engine.Map.GetLength(0)), r.Next(0, Engine.Map.GetLength(1)));
@@ -236,24 +242,25 @@ namespace AStarPathfinding
             {
                 for (int y = 0; y < Engine.Map.GetLength(1); y++)
                 {
+                    Engine.Map[x, y].Status = LocationStatus.NULL;
                     if (x == start.X && y == start.Y)
                     {
-                        Engine.Map[x, y] = "A";
+                        Engine.Map[x, y].Type = LocationType.START_POINT;
                     }
                     else if (x == target.X && y == target.Y)
                     {
-                        Engine.Map[x, y] = "B";
+                        Engine.Map[x, y].Type = LocationType.END_POINT;
                     }
                     else
                     {
                         int type = r.Next(0, 3);
                         if (type == 0)
                         {
-                            Engine.Map[x, y] = "X";
+                            Engine.Map[x, y].Type = LocationType.WALL;
                         }
                         else
                         {
-                            Engine.Map[x, y] = null;
+                            Engine.Map[x, y].Type = LocationType.SPACE;
                         }
                     }
                 }
@@ -261,13 +268,14 @@ namespace AStarPathfinding
             RefreshCanvas();
         }
 
-        private void btnClear_Click(object sender, EventArgs e)
+        private void BtnClear_Click(object sender, EventArgs e)
         {
             for (int x = 0; x < Engine.Map.GetLength(0); x++)
             {
                 for (int y = 0; y < Engine.Map.GetLength(1); y++)
                 {
-                    Engine.Map[x, y] = null;
+                    Engine.Map[x, y].Type = LocationType.SPACE;
+                    Engine.Map[x, y].Status = LocationStatus.NULL;
                 }
             }
             RefreshCanvas();

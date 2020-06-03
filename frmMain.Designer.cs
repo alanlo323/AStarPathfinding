@@ -42,7 +42,7 @@
             this.btnRun.TabIndex = 0;
             this.btnRun.Text = "Run";
             this.btnRun.UseVisualStyleBackColor = true;
-            this.btnRun.Click += new System.EventHandler(this.btnRun_Click);
+            this.btnRun.Click += new System.EventHandler(this.BtnRun_Click);
             // 
             // btnRandom
             // 
@@ -53,7 +53,7 @@
             this.btnRandom.TabIndex = 1;
             this.btnRandom.Text = "Random";
             this.btnRandom.UseVisualStyleBackColor = true;
-            this.btnRandom.Click += new System.EventHandler(this.btnRandom_Click);
+            this.btnRandom.Click += new System.EventHandler(this.BtnRandom_Click);
             // 
             // btnClear
             // 
@@ -64,7 +64,7 @@
             this.btnClear.TabIndex = 2;
             this.btnClear.Text = "Clear";
             this.btnClear.UseVisualStyleBackColor = true;
-            this.btnClear.Click += new System.EventHandler(this.btnClear_Click);
+            this.btnClear.Click += new System.EventHandler(this.BtnClear_Click);
             // 
             // FrmMain
             // 
