@@ -11,12 +11,13 @@ namespace AStarPathfinding
 {
     public partial class FrmMain : Form, IStatesChangeRecall
     {
-        int ButtonCountX { get; set; } = 50;
-        int ButtonCountY { get; set; } = 50;
+        int BoardWidth { get; set; } = 100;
+        int BoardHeight { get; set; } = 100;
         Size CanvasSize { get; set; }
         DrawPanel DrawPanel { get; set; }
         List<Line> GridLine { get; } = new List<Line>();
         Engine Engine { get; set; }
+        Maze Maze { get; set; }
 
         bool IStatesChangeRecall.IsEngineRunning
         {
@@ -29,6 +30,7 @@ namespace AStarPathfinding
                     btnRun.Enabled = !isEngineRunning;
                     btnRandom.Enabled = !isEngineRunning;
                     btnClear.Enabled = !isEngineRunning;
+                    btnGenerateMaze.Enabled = !isEngineRunning;
                 }));
             }
         }
@@ -43,7 +45,7 @@ namespace AStarPathfinding
         {
             InitializeComponent();
             CanvasSize = new Size(500, 500);
-            Size = new Size(CanvasSize.Width, CanvasSize.Height + 75);
+            Size = new Size(CanvasSize.Width, CanvasSize.Height + 74);
             //MaximumSize = new Size(Size.Width + 20, Size.Height + 20);
             MinimumSize = Size;
 
@@ -61,20 +63,20 @@ namespace AStarPathfinding
 
         private void FrmMain_Load(object sender, EventArgs e)
         {
-            Engine = new Engine(new Size(ButtonCountX, ButtonCountY), this);
+            Engine = new Engine(new Size(BoardWidth, BoardHeight), this);
 
             //  Draw base line
-            for (int x = 0; x <= ButtonCountX; x++)
+            for (int x = 0; x <= BoardWidth; x++)
             {
                 GridLine.Add(new Line(Color.Black, 1f,
-                    new Point(Math.Min(CanvasSize.Width - 1, x * (CanvasSize.Width / ButtonCountX)), 0),
-                    new Point(Math.Min(CanvasSize.Width - 1, x * (CanvasSize.Width / ButtonCountX)), CanvasSize.Height)));
+                    new Point(Math.Min(CanvasSize.Width - 1, x * (CanvasSize.Width / BoardWidth)), 0),
+                    new Point(Math.Min(CanvasSize.Width - 1, x * (CanvasSize.Width / BoardWidth)), CanvasSize.Height)));
             }
-            for (int y = 0; y <= ButtonCountY; y++)
+            for (int y = 0; y <= BoardHeight; y++)
             {
                 GridLine.Add(new Line(Color.Black, 1f,
-                    new Point(0, Math.Min(CanvasSize.Height - 1, y * (CanvasSize.Height / ButtonCountY))),
-                    new Point(CanvasSize.Width, Math.Min(CanvasSize.Height - 1, y * (CanvasSize.Height / ButtonCountY)))));
+                    new Point(0, Math.Min(CanvasSize.Height - 1, y * (CanvasSize.Height / BoardHeight))),
+                    new Point(CanvasSize.Width, Math.Min(CanvasSize.Height - 1, y * (CanvasSize.Height / BoardHeight)))));
             }
 
         }
@@ -145,10 +147,61 @@ namespace AStarPathfinding
 
         private void OnCanvasPaint(object sender, PaintEventArgs e)
         {
+            if (Maze != null)
+            {
+                // Create base maze
+                for (int x = 0; x < Engine.Map.GetLength(0); x++)
+                {
+                    for (int y = 0; y < Engine.Map.GetLength(1); y++)
+                    {
+                        Engine.Map[x, y].Status = LocationStatus.NULL;
+                        if (x % 2 == 1 && y % 2 == 1)
+                        {
+                            Engine.Map[x, y].Type = LocationType.WALL;
+                        }
+                        else
+                        {
+                            Engine.Map[x, y].Type = LocationType.SPACE;
+                        }
+                    }
+                }
+                //  Transfer maze to block base map
+                for (int y = 0; y < Maze.Board.GetLength(0); y++)
+                {
+                    for (int x = 0; x < Maze.Board.GetLength(1); x++)
+                    {
+                        Engine.Map[y * 2, x * 2].Type = LocationType.SPACE;
+                        if (Maze.Board[y, x].EastWall && ((x * 2 + 1) >= 0))
+                        {
+                            Engine.Map[x * 2 + 1, y * 2].Type = LocationType.WALL;
+                        }
+                        if (Maze.Board[y, x].SouthWall && ((y * 2 + 1) >= 0))
+                        {
+                            Engine.Map[x * 2, y * 2 + 1].Type = LocationType.WALL;
+                        }
+                        if (Maze.Board[y, x].WestWall && ((x * 2 - 1) >= 0))
+                        {
+                            Engine.Map[x * 2 - 1, y * 2].Type = LocationType.WALL;
+                        }
+                        if (Maze.Board[y, x].NorthWall && ((y * 2 - 1) >= 0))
+                        {
+                            Engine.Map[x * 2, y * 2 - 1].Type = LocationType.WALL;
+                        }
+                    }
+                }
+                var start = Maze.Start;
+                var end = Maze.End;
+                Engine.Map[start.X * 2, start.Y * 2].Type = LocationType.START_POINT;
+                Engine.Map[end.X * 2, end.Y * 2].Type = LocationType.END_POINT;
+            }
+
             canvas = e.Graphics;
 
-            foreach (Line line in GridLine)
-                line.Draw(canvas);
+            if (Maze == null)
+            {
+                foreach (Line line in GridLine)
+                    line.Draw(canvas);
+            }
 
             for (int x = 0; x < Engine.Map.GetLength(0); x++)
             {
@@ -160,13 +213,16 @@ namespace AStarPathfinding
                             switch (Engine.Map[x, y].Status)
                             {
                                 case LocationStatus.NULL:
-                                    DrawBlock(x, y, isFill: false);
+                                    DrawBlock(x, y);
                                     break;
                                 case LocationStatus.SEARCHED:
                                     DrawBlock(x, y, color: Color.LightGray);
                                     break;
                                 case LocationStatus.PATH:
                                     DrawBlock(x, y, color: Color.Green);
+                                    break;
+                                case LocationStatus.ERROR:
+                                    DrawBlock(x, y, color: Color.Pink);
                                     break;
                                 default:
                                     break;
@@ -190,8 +246,8 @@ namespace AStarPathfinding
 
         private void TransferMouseLocationToIndex(int mouseX, int mouseY, out int x, out int y)
         {
-            x = Math.Max(0, Math.Min(ButtonCountX - 1, mouseX / (CanvasSize.Width / ButtonCountX)));
-            y = Math.Max(0, Math.Min(ButtonCountY - 1, mouseY / (CanvasSize.Height / ButtonCountY)));
+            x = Math.Max(0, Math.Min(BoardWidth - 1, mouseX / (CanvasSize.Width / BoardWidth)));
+            y = Math.Max(0, Math.Min(BoardHeight - 1, mouseY / (CanvasSize.Height / BoardHeight)));
         }
 
         private void RefreshCanvas()
@@ -201,8 +257,8 @@ namespace AStarPathfinding
 
         private void DrawBlock(int x, int y, Color? color = null, bool isFill = true)
         {
-            var point = new Point(x * (CanvasSize.Width / ButtonCountX), y * (CanvasSize.Height / ButtonCountY));
-            var size = new Size(CanvasSize.Width / ButtonCountX, CanvasSize.Height / ButtonCountY);
+            var point = new Point(x * (CanvasSize.Width / BoardWidth), y * (CanvasSize.Height / BoardHeight));
+            var size = new Size(CanvasSize.Width / BoardWidth, CanvasSize.Height / BoardHeight);
             if (isFill)
             {
                 canvas.FillRectangle(new SolidBrush(color ?? Color.Transparent), new Rectangle(point, size));
@@ -228,9 +284,8 @@ namespace AStarPathfinding
             new Thread(() =>
             {
                 Thread.CurrentThread.IsBackground = true;
-                Engine.Main();
+                Engine.Evolve();
             }).Start();
-            RefreshCanvas();
         }
 
         private void BtnRandom_Click(object sender, EventArgs e)
@@ -270,6 +325,7 @@ namespace AStarPathfinding
 
         private void BtnClear_Click(object sender, EventArgs e)
         {
+            Maze = null;
             for (int x = 0; x < Engine.Map.GetLength(0); x++)
             {
                 for (int y = 0; y < Engine.Map.GetLength(1); y++)
@@ -279,6 +335,17 @@ namespace AStarPathfinding
                 }
             }
             RefreshCanvas();
+        }
+
+        private void BtnGenerateMaze_Click(object sender, EventArgs e)
+        {
+            new Thread(() =>
+            {
+                Maze = new Maze(BoardWidth / 2, BoardHeight / 2, this);
+                Maze.Generate();
+                RefreshCanvas();
+                Maze = null;
+            }).Start();
         }
     }
 }

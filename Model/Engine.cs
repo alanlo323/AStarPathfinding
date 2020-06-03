@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using static AStarPathfinding.Location;
@@ -22,6 +21,7 @@ namespace AStarPathfinding
             NULL,
             SEARCHED,
             PATH,
+            ERROR,
         }
 
         public enum LocationType
@@ -69,15 +69,16 @@ namespace AStarPathfinding
             }
         }
 
-        public void Main()
+        public void Evolve()
         {
             statesChangeRecall.IsEngineRunning = true;
 
             // algorithm
 
             Location current = null;
-            var start = new Location { };
-            var target = new Location { };
+            Location start = null;
+            Location target = null;
+            Location error = new Location();
             var openList = new List<Location>();
             var closedList = new List<Location>();
             int g = 0;
@@ -89,12 +90,32 @@ namespace AStarPathfinding
                     switch (Map[x, y].Type)
                     {
                         case LocationType.START_POINT:
-                            start.X = x;
-                            start.Y = y;
+                            if (start == null)
+                            {
+                                start = new Location()
+                                {
+                                    X = x,
+                                    Y = y,
+                                };
+                            }
+                            else
+                            {
+                                start = error;
+                            }
                             break;
                         case LocationType.END_POINT:
-                            target.X = x;
-                            target.Y = y;
+                            if (target == null)
+                            {
+                                target = new Location()
+                                {
+                                    X = x,
+                                    Y = y,
+                                };
+                            }
+                            else
+                            {
+                                target = error;
+                            }
                             break;
                         case LocationType.WALL:
                             break;
@@ -103,6 +124,14 @@ namespace AStarPathfinding
                     }
                     Map[x, y].Status = LocationStatus.NULL;
                 }
+            }
+
+            //  if multiple start/targer found, return
+            if (start == error || target == error)
+            {
+                statesChangeRecall.IsEngineRunning = false;
+                statesChangeRecall.OnStatusUpdated();
+                return;
             }
 
             // start by adding the original position to the open list
@@ -166,21 +195,39 @@ namespace AStarPathfinding
                 }
             }
 
-            // assume path was found; let's show it
-            while (current != null)
+            // Show result
+            if (closedList.FirstOrDefault(l => l.X == target.X && l.Y == target.Y) != null)
             {
-                if (Map[current.X, current.Y].Type == LocationType.SPACE)
+                //  Path found
+                while (current != null)
                 {
-                    Map[current.X, current.Y].Status = LocationStatus.PATH;
-                    statesChangeRecall.OnStatusUpdated();
+                    if (Map[current.X, current.Y].Type == LocationType.SPACE)
+                    {
+                        Map[current.X, current.Y].Status = LocationStatus.PATH;
+                        statesChangeRecall.OnStatusUpdated();
+                    }
+                    current = current.Parent;
+                    System.Threading.Thread.Sleep(5);
                 }
-                current = current.Parent;
-                System.Threading.Thread.Sleep(25);
+            }
+            else
+            {
+                //  No path found
+                while (closedList.Count != 0)
+                {
+                    Location l = closedList.First();
+                    l.Status = LocationStatus.ERROR;
+                    closedList.Remove(l);
+
+                    statesChangeRecall.OnStatusUpdated();
+                    System.Threading.Thread.Sleep(1);
+                }
             }
 
             // end
 
             statesChangeRecall.IsEngineRunning = false;
+            statesChangeRecall.OnStatusUpdated();
         }
 
         static List<Location> GetWalkableAdjacentSquares(int x, int y, Location[,] map)
@@ -208,7 +255,10 @@ namespace AStarPathfinding
 
         static int ComputeHScore(int x, int y, int targetX, int targetY)
         {
-            return Math.Abs(targetX - x) + Math.Abs(targetY - y) + Math.Abs(Math.Abs(targetX) - Math.Abs(targetY));
+            double a = x > targetX ? x - targetX : targetX - x;
+            double b = y > targetY ? y - targetY : targetY - y;
+
+            return (int)(a * a + b * b);
         }
     }
 }
