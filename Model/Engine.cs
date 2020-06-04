@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using static AStarPathfinding.Location;
@@ -81,7 +82,6 @@ namespace AStarPathfinding
             Location error = new Location();
             var openList = new List<Location>();
             var closedList = new List<Location>();
-            int g = 0;
 
             for (int x = 0; x < Map.GetLength(0); x++)
             {
@@ -159,7 +159,6 @@ namespace AStarPathfinding
                     break;
 
                 var adjacentSquares = GetWalkableAdjacentSquares(current.X, current.Y, Map);
-                g++;
 
                 foreach (var adjacentSquare in adjacentSquares)
                 {
@@ -173,7 +172,7 @@ namespace AStarPathfinding
                             && l.Y == adjacentSquare.Y) == null)
                     {
                         // compute its score, set the parent
-                        adjacentSquare.G = g;
+                        adjacentSquare.G = current.G + ComputeHScore(adjacentSquare.X, adjacentSquare.Y, current.X, current.Y);
                         adjacentSquare.H = ComputeHScore(adjacentSquare.X, adjacentSquare.Y, target.X, target.Y);
                         adjacentSquare.F = adjacentSquare.G + adjacentSquare.H;
                         adjacentSquare.Parent = current;
@@ -185,9 +184,9 @@ namespace AStarPathfinding
                     {
                         // test if using the current G score makes the adjacent square's F score
                         // lower, if yes update the parent because it means it's a better path
-                        if (g + adjacentSquare.H < adjacentSquare.F)
+                        if (current.G + ComputeHScore(adjacentSquare.X, adjacentSquare.Y, current.X, current.Y) + adjacentSquare.H < adjacentSquare.F)
                         {
-                            adjacentSquare.G = g;
+                            adjacentSquare.G = current.G + ComputeHScore(adjacentSquare.X, adjacentSquare.Y, current.X, current.Y);
                             adjacentSquare.F = adjacentSquare.G + adjacentSquare.H;
                             adjacentSquare.Parent = current;
                         }
@@ -258,7 +257,7 @@ namespace AStarPathfinding
             double a = x > targetX ? x - targetX : targetX - x;
             double b = y > targetY ? y - targetY : targetY - y;
 
-            return (int)(a * a + b * b);
+            return (int)Math.Sqrt(a * a + b * b);
         }
     }
 }
