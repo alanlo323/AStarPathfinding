@@ -40,6 +40,8 @@ namespace AStarPathfinding.Model
         public int iterationcount = 0;
         private IStatesChangeRecall statesChangeRecall;
 
+        public bool IsBuilding { get; set; }
+
         public Maze(int width, int height, IStatesChangeRecall statesChangeRecall)
         {
             this.Height = height;
@@ -56,10 +58,12 @@ namespace AStarPathfinding.Model
 
         public void Generate(int startX, int startY, int endX, int endY)
         {
+            IsBuilding = true;
             this.Start = new Point(startX, startY);
             this.End = new Point(endX, endY);
             Points = new List<Tuple<Cell, Direction>>();
             CarvePassage(startX, startY);
+            IsBuilding = false;
         }
 
         /// <summary>

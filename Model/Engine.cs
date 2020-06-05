@@ -10,9 +10,9 @@ namespace AStarPathfinding
     {
         public int X { get; set; }
         public int Y { get; set; }
-        public int F { get; set; }
-        public int G { get; set; }
-        public int H { get; set; }
+        public double F { get; set; }
+        public double G { get; set; }
+        public double H { get; set; }
         public Location Parent { get; set; }
         public LocationType Type { get; set; }
         public LocationStatus Status { get; set; }
@@ -127,7 +127,7 @@ namespace AStarPathfinding
             }
 
             //  if multiple start/targer found, return
-            if (start == error || target == error)
+            if (start == error || target == error || start == null || target == null)
             {
                 statesChangeRecall.IsEngineRunning = false;
                 statesChangeRecall.OnStatusUpdated();
@@ -136,7 +136,7 @@ namespace AStarPathfinding
 
             // start by adding the original position to the open list
             openList.Add(start);
-
+            int g = 0;
             while (openList.Count > 0)
             {
                 // get the square with the lowest F score
@@ -160,6 +160,7 @@ namespace AStarPathfinding
 
                 var adjacentSquares = GetWalkableAdjacentSquares(current.X, current.Y, Map);
 
+                //g++;
                 foreach (var adjacentSquare in adjacentSquares)
                 {
                     // if this adjacent square is already in the closed list, ignore it
@@ -172,7 +173,7 @@ namespace AStarPathfinding
                             && l.Y == adjacentSquare.Y) == null)
                     {
                         // compute its score, set the parent
-                        adjacentSquare.G = current.G + ComputeHScore(adjacentSquare.X, adjacentSquare.Y, current.X, current.Y);
+                        adjacentSquare.G = g + current.G + ComputeHScore(adjacentSquare.X, adjacentSquare.Y, current.X, current.Y);
                         adjacentSquare.H = ComputeHScore(adjacentSquare.X, adjacentSquare.Y, target.X, target.Y);
                         adjacentSquare.F = adjacentSquare.G + adjacentSquare.H;
                         adjacentSquare.Parent = current;
@@ -184,9 +185,9 @@ namespace AStarPathfinding
                     {
                         // test if using the current G score makes the adjacent square's F score
                         // lower, if yes update the parent because it means it's a better path
-                        if (current.G + ComputeHScore(adjacentSquare.X, adjacentSquare.Y, current.X, current.Y) + adjacentSquare.H < adjacentSquare.F)
+                        if (g + current.G + ComputeHScore(adjacentSquare.X, adjacentSquare.Y, current.X, current.Y) + adjacentSquare.H < adjacentSquare.F)
                         {
-                            adjacentSquare.G = current.G + ComputeHScore(adjacentSquare.X, adjacentSquare.Y, current.X, current.Y);
+                            adjacentSquare.G = g + current.G + ComputeHScore(adjacentSquare.X, adjacentSquare.Y, current.X, current.Y);
                             adjacentSquare.F = adjacentSquare.G + adjacentSquare.H;
                             adjacentSquare.Parent = current;
                         }
@@ -231,10 +232,15 @@ namespace AStarPathfinding
 
         static List<Location> GetWalkableAdjacentSquares(int x, int y, Location[,] map)
         {
-            Location Top = (y <= 0) ? null : map[x, y - 1];  // Top
-            Location Bottom = (y >= map.GetLength(1) - 1) ? null : map[x, y + 1];  // Bottom
-            Location Left = (x <= 0) ? null : map[x - 1, y];  // Left
-            Location Right = (x >= map.GetLength(0) - 1) ? null : map[x + 1, y];  // Right
+            Location Top = (y <= 0) ? null : map[x, y - 1];
+            Location Bottom = (y >= map.GetLength(1) - 1) ? null : map[x, y + 1];
+            Location Left = (x <= 0) ? null : map[x - 1, y];
+            Location Right = (x >= map.GetLength(0) - 1) ? null : map[x + 1, y];
+
+            Location TopLeft = ((y <= 0) || (x <= 0)) ? null : map[x - 1, y - 1];
+            Location TopRight = ((y <= 0) || (x >= map.GetLength(0) - 1)) ? null : map[x + 1, y - 1];
+            Location BottomLeft = ((y >= map.GetLength(1) - 1) || (x <= 0)) ? null : map[x - 1, y + 1];
+            Location BottomRight = ((y >= map.GetLength(1) - 1) || (x >= map.GetLength(0) - 1)) ? null : map[x + 1, y + 1];
 
             var proposedLocations = new List<Location>()
             {
@@ -244,6 +250,23 @@ namespace AStarPathfinding
                 Right,
             };
 
+            if (IsLocationWalkable(Top) || IsLocationWalkable(Left))
+            {
+                proposedLocations.Add(TopLeft);
+            }
+            if (IsLocationWalkable(Top) || IsLocationWalkable(Right))
+            {
+                proposedLocations.Add(TopRight);
+            }
+            if (IsLocationWalkable(Bottom) || IsLocationWalkable(Left))
+            {
+                proposedLocations.Add(BottomLeft);
+            }
+            if (IsLocationWalkable(Bottom) || IsLocationWalkable(Right))
+            {
+                proposedLocations.Add(BottomRight);
+            }
+
             return proposedLocations.Where(l => IsLocationWalkable(l)).ToList();
         }
 
@@ -252,12 +275,12 @@ namespace AStarPathfinding
             return target != null && (target.Type == LocationType.SPACE || target.Type == LocationType.END_POINT);
         }
 
-        static int ComputeHScore(int x, int y, int targetX, int targetY)
+        static double ComputeHScore(int x, int y, int targetX, int targetY)
         {
             double a = x > targetX ? x - targetX : targetX - x;
             double b = y > targetY ? y - targetY : targetY - y;
 
-            return (int)Math.Sqrt(a * a + b * b);
+            return Math.Sqrt(a * a + b * b);
         }
     }
 }

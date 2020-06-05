@@ -83,7 +83,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(351, 35);
+            this.ClientSize = new System.Drawing.Size(349, 35);
             this.Controls.Add(this.btnGenerateMaze);
             this.Controls.Add(this.btnClear);
             this.Controls.Add(this.btnRandom);

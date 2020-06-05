@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using AStarPathfinding.Model;
@@ -46,9 +45,9 @@ namespace AStarPathfinding
         {
             InitializeComponent();
             CanvasSize = new Size(500, 500);
-            Size = new Size(CanvasSize.Width, CanvasSize.Height + 74);
-            //MaximumSize = new Size(Size.Width + 20, Size.Height + 20);
+            Size = new Size(CanvasSize.Width + 16, CanvasSize.Height + 74);
             MinimumSize = Size;
+            MaximumSize = Size;
 
             DrawPanel = new DrawPanel()
             {
@@ -65,6 +64,7 @@ namespace AStarPathfinding
         private void FrmMain_Load(object sender, EventArgs e)
         {
             Engine = new Engine(new Size(BoardWidth, BoardHeight), this);
+            Maze = new Maze(BoardWidth, BoardHeight, this);
 
             //  Draw base line
             for (int x = 0; x <= BoardWidth; x++)
@@ -135,6 +135,7 @@ namespace AStarPathfinding
 
         private void OnMouseMove(object sender, MouseEventArgs e)
         {
+
             if (isEngineRunning)
                 return;
             if (!isSettingBlock)
@@ -148,7 +149,7 @@ namespace AStarPathfinding
 
         private void OnCanvasPaint(object sender, PaintEventArgs e)
         {
-            if (Maze != null)
+            if (Maze != null && Maze.IsBuilding)
             {
                 // Create base maze
                 for (int x = 0; x < Engine.Map.GetLength(0); x++)
@@ -156,14 +157,6 @@ namespace AStarPathfinding
                     for (int y = 0; y < Engine.Map.GetLength(1); y++)
                     {
                         Engine.Map[x, y].Status = LocationStatus.NULL;
-                        //if (x % 2 == 1 && y % 2 == 1)
-                        //{
-                        //    Engine.Map[x, y].Type = LocationType.WALL;
-                        //}
-                        //else
-                        //{
-                        //    Engine.Map[x, y].Type = LocationType.SPACE;
-                        //}
                         Engine.Map[x, y].Type = LocationType.WALL;
                     }
                 }
@@ -172,7 +165,6 @@ namespace AStarPathfinding
                 {
                     for (int x = 0; x < Maze.Board.GetLength(1); x++)
                     {
-                        int spaceCount = 0;
                         if ((x * 2 + 1) >= 0)
                         {
                             if (Maze.Board[y, x].EastWall)
@@ -182,7 +174,6 @@ namespace AStarPathfinding
                             else
                             {
                                 Engine.Map[x * 2 + 1, y * 2].Type = LocationType.SPACE;
-                                spaceCount++;
                             }
                         }
                         if ((y * 2 + 1) >= 0)
@@ -194,7 +185,6 @@ namespace AStarPathfinding
                             else
                             {
                                 Engine.Map[x * 2, y * 2 + 1].Type = LocationType.SPACE;
-                                spaceCount++;
                             }
                         }
                         if ((x * 2 - 1) >= 0)
@@ -206,7 +196,6 @@ namespace AStarPathfinding
                             else
                             {
                                 Engine.Map[x * 2 - 1, y * 2].Type = LocationType.SPACE;
-                                spaceCount++;
                             }
                         }
                         if ((y * 2 - 1) >= 0)
@@ -218,13 +207,9 @@ namespace AStarPathfinding
                             else
                             {
                                 Engine.Map[x * 2, y * 2 - 1].Type = LocationType.SPACE;
-                                spaceCount++;
                             }
                         }
-                        //if (spaceCount >= 1)
-                        //{
                         Engine.Map[y * 2, x * 2].Type = LocationType.SPACE;
-                        //}
                     }
                 }
                 var start = Maze.Start;
@@ -235,7 +220,7 @@ namespace AStarPathfinding
 
             canvas = e.Graphics;
 
-            if (Maze == null)
+            if (!Maze.IsBuilding)
             {
                 foreach (Line line in GridLine)
                     line.Draw(canvas);
@@ -363,7 +348,7 @@ namespace AStarPathfinding
 
         private void BtnClear_Click(object sender, EventArgs e)
         {
-            Maze = null;
+            Maze = new Maze(BoardWidth, BoardHeight, this);
             for (int x = 0; x < Engine.Map.GetLength(0); x++)
             {
                 for (int y = 0; y < Engine.Map.GetLength(1); y++)
@@ -382,7 +367,6 @@ namespace AStarPathfinding
                 Maze = new Maze(BoardWidth / 2, BoardHeight / 2, this);
                 Maze.Generate();
                 RefreshCanvas();
-                Maze = null;
             }).Start();
         }
     }
