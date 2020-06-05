@@ -17,6 +17,9 @@ namespace AStarPathfinding
         public LocationType Type { get; set; }
         public LocationStatus Status { get; set; }
 
+        public bool IsSlopeMove = false;
+        public List<Location> SlopePath { get; set; } = new List<Location>();
+
         public enum LocationStatus
         {
             NULL,
@@ -123,6 +126,8 @@ namespace AStarPathfinding
                             break;
                     }
                     Map[x, y].Status = LocationStatus.NULL;
+                    Map[x, y].IsSlopeMove = false;
+                    Map[x, y].SlopePath = new List<Location>();
                 }
             }
 
@@ -148,6 +153,12 @@ namespace AStarPathfinding
 
                 // show current square on the map
                 current.Status = LocationStatus.SEARCHED;
+                if (current.IsSlopeMove)
+                {
+                    var lowestSlopeSquare = current.SlopePath.Min(l => l.F);
+                    var slopeSquare = current.SlopePath.First(l => l.F == lowestSlopeSquare);
+                    slopeSquare.Status = LocationStatus.SEARCHED;
+                }
                 statesChangeRecall.OnStatusUpdated();
                 System.Threading.Thread.Sleep(5);
 
@@ -250,20 +261,48 @@ namespace AStarPathfinding
                 Right,
             };
 
-            if (IsLocationWalkable(Top) || IsLocationWalkable(Left))
+            if (TopLeft != null && (IsLocationWalkable(Top) || IsLocationWalkable(Left)))
             {
+                TopLeft.IsSlopeMove = true;
+
+                if (IsLocationWalkable(Top))
+                    TopLeft.SlopePath.Add(Top);
+                if (IsLocationWalkable(Left))
+                    TopLeft.SlopePath.Add(Left);
+
                 proposedLocations.Add(TopLeft);
             }
-            if (IsLocationWalkable(Top) || IsLocationWalkable(Right))
+            if (TopRight != null && (IsLocationWalkable(Top) || IsLocationWalkable(Right)))
             {
+                TopRight.IsSlopeMove = true;
+
+                if (IsLocationWalkable(Top))
+                    TopRight.SlopePath.Add(Top);
+                if (IsLocationWalkable(Right))
+                    TopRight.SlopePath.Add(Right);
+
                 proposedLocations.Add(TopRight);
             }
-            if (IsLocationWalkable(Bottom) || IsLocationWalkable(Left))
+            if (BottomLeft != null && (IsLocationWalkable(Bottom) || IsLocationWalkable(Left)))
             {
+                BottomLeft.IsSlopeMove = true;
+
+                if (IsLocationWalkable(Bottom))
+                    BottomLeft.SlopePath.Add(Bottom);
+                if (IsLocationWalkable(Left))
+                    BottomLeft.SlopePath.Add(Left);
+
                 proposedLocations.Add(BottomLeft);
             }
-            if (IsLocationWalkable(Bottom) || IsLocationWalkable(Right))
+            if (BottomRight != null && (IsLocationWalkable(Bottom) || IsLocationWalkable(Right)))
             {
+                BottomRight.IsSlopeMove = true;
+
+                if (IsLocationWalkable(Bottom))
+                    BottomRight.SlopePath.Add(Bottom);
+                if (IsLocationWalkable(Right))
+                    BottomRight.SlopePath.Add(Right);
+
                 proposedLocations.Add(BottomRight);
             }
 
