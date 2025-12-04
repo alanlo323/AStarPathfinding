@@ -134,6 +134,11 @@ namespace AStarPathfinding
             }).Start();
         }
 
+        private void ChkAllowDiagonal_CheckedChanged(object sender, EventArgs e)
+        {
+            Engine.AllowDiagonalMovement = chkAllowDiagonal.Checked;
+        }
+
         private void DrawBlock(int x, int y, Color? color = null, bool isFill = true)
         {
             var point = new Point(x * (CanvasSize.Width / BoardWidth), y * (CanvasSize.Height / BoardHeight));

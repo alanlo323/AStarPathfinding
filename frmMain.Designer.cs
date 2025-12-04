@@ -32,6 +32,7 @@
             this.btnRandom = new System.Windows.Forms.Button();
             this.btnClear = new System.Windows.Forms.Button();
             this.btnGenerateMaze = new System.Windows.Forms.Button();
+            this.chkAllowDiagonal = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // btnRun
@@ -78,12 +79,27 @@
             this.btnGenerateMaze.UseVisualStyleBackColor = true;
             this.btnGenerateMaze.Click += new System.EventHandler(this.BtnGenerateMaze_Click);
             // 
+            // chkAllowDiagonal
+            // 
+            this.chkAllowDiagonal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.chkAllowDiagonal.AutoSize = true;
+            this.chkAllowDiagonal.Checked = true;
+            this.chkAllowDiagonal.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkAllowDiagonal.Location = new System.Drawing.Point(350, 9);
+            this.chkAllowDiagonal.Name = "chkAllowDiagonal";
+            this.chkAllowDiagonal.Size = new System.Drawing.Size(100, 17);
+            this.chkAllowDiagonal.TabIndex = 4;
+            this.chkAllowDiagonal.Text = "Allow Diagonal";
+            this.chkAllowDiagonal.UseVisualStyleBackColor = true;
+            this.chkAllowDiagonal.CheckedChanged += new System.EventHandler(this.ChkAllowDiagonal_CheckedChanged);
+            // 
             // FrmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(349, 35);
+            this.Controls.Add(this.chkAllowDiagonal);
             this.Controls.Add(this.btnGenerateMaze);
             this.Controls.Add(this.btnClear);
             this.Controls.Add(this.btnRandom);
@@ -104,6 +120,7 @@
         private System.Windows.Forms.Button btnRandom;
         private System.Windows.Forms.Button btnClear;
         private System.Windows.Forms.Button btnGenerateMaze;
+        private System.Windows.Forms.CheckBox chkAllowDiagonal;
     }
 }
 
